@@ -280,6 +280,54 @@
   ::-webkit-scrollbar-track { background: var(--dark2); }
   ::-webkit-scrollbar-thumb { background: var(--dark4); border-radius: 3px; }
 
+  /* LOGIN SCREEN */
+  #loginScreen {
+    position: fixed; inset: 0; z-index: 2000;
+    background: var(--dark);
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><path d="M0 0h60v60H0z" fill="%230D0F14"/><path d="M30 0v60M0 30h60" stroke="%23141720" stroke-width="1"/></svg>');
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease;
+  }
+  #loginScreen.hidden { opacity: 0; pointer-events: none; }
+  .login-box {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 3rem 2.5rem; width: 100%; max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .login-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.5rem; font-weight: 300; letter-spacing: 0.2em;
+    color: #fff; margin-bottom: 0.3rem;
+  }
+  .login-logo span { color: var(--gold); }
+  .login-subtitle {
+    font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 2.5rem;
+  }
+  .login-input {
+    width: 100%; padding: 0.85rem 1rem; margin-bottom: 1rem;
+    background: var(--dark3); border: 1px solid var(--border2);
+    border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; outline: none; box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: var(--gold); }
+  .login-btn {
+    width: 100%; padding: 0.9rem; margin-top: 0.5rem;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    border: none; border-radius: 8px; color: #0D0F14;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+    letter-spacing: 0.08em; cursor: pointer; transition: opacity 0.2s;
+  }
+  .login-btn:hover { opacity: 0.9; }
+  .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .login-error {
+    color: var(--danger); font-size: 0.8rem; margin-top: 0.75rem;
+    min-height: 1.2rem;
+  }
+  .login-loading { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.75rem; }
+
   /* UTILS */
   .text-gold { color: var(--gold); }
   .text-muted { color: var(--text-muted); }
@@ -304,8 +352,60 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .section-intro { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6; }
 </style>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD-n0eXgqtDMbbV6m20dnscZmztK-oCkiE",
+    authDomain: "listiq-e3de0.firebaseapp.com",
+    projectId: "listiq-e3de0",
+    storageBucket: "listiq-e3de0.firebasestorage.app",
+    messagingSenderId: "293663305554",
+    appId: "1:293663305554:web:0e8903f8ef1918e40b948b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Make auth available globally
+  window._fbAuth = auth;
+  window._fbSignIn = signInWithEmailAndPassword;
+  window._fbSignOut = signOut;
+
+  // Watch auth state
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // Logged in — hide login screen, show app
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('landing').style.display = '';
+      document.getElementById('app').style.display = '';
+      document.getElementById('logoutBtn').style.display = 'flex';
+    } else {
+      // Not logged in — show login screen, hide everything else
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('landing').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+  });
+</script>
 </head>
 <body>
+
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">List<span>IQ</span></div>
+    <div class="login-subtitle">Professional Real Estate Dashboard</div>
+    <input class="login-input" id="loginEmail" type="email" placeholder="Email address" autocomplete="email">
+    <input class="login-input" id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
 
 <!-- LANDING -->
 <div id="landing">
@@ -324,6 +424,7 @@
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-brand">List<span>IQ</span></div>
+    <button id="logoutBtn" onclick="doLogout()" style="display:none;margin-left:auto;padding:0.4rem 1rem;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-family:Inter,sans-serif;font-size:0.75rem;letter-spacing:0.06em;cursor:pointer;align-items:center;gap:0.4rem;">Sign Out</button>
     <div class="rate-ticker" id="rateTicker">
       <div class="rate-item"><span class="label">30yr Fixed</span><span class="value" id="rate30">—</span></div>
       <div class="rate-item"><span class="label">15yr Fixed</span><span class="value" id="rate15">—</span></div>
@@ -2735,6 +2836,35 @@ function clearIntelReport() {
   document.getElementById('intelCity').value = '';
   document.getElementById('intelZip').value = '';
   document.getElementById('intelCounty').value = '';
+}
+
+// Firebase Auth Functions
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  errEl.textContent = '';
+
+  try {
+    await window._fbSignIn(window._fbAuth, email, password);
+    // onAuthStateChanged will handle the rest
+  } catch(e) {
+    const msg = e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'
+      ? 'Incorrect email or password.' : 'Sign in failed. Please try again.';
+    errEl.textContent = msg;
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+async function doLogout() {
+  try { await window._fbSignOut(window._fbAuth); } catch(e) {}
 }
 
 // Init
